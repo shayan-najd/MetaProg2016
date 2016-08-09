@@ -1,5 +1,6 @@
-{-# LANGUAGE QuasiQuotes,TemplateHaskell #-}
-module PushAdd where
+{-# LANGUAGE QuasiQuotes,TemplateHaskell, MultiParamTypeClasses,
+             FlexibleInstances, GADTs #-}
+module PushAddTagless where
 
 import Language.Haskell.TH.Quote
 import Language.Haskell.TH
@@ -8,14 +9,10 @@ import Control.Monad.State
 data Op = PUSH Integer | ADD
         deriving (Read,Show)
 
-push :: Integer -> State [Integer] ()
-push i = modify (i :)
+class Monad m => OpLike m where
+ push :: Integer -> m ()
+ add  :: m (Maybe Integer)
 
-add :: State [Integer] (Maybe Integer)
-add = do s <- get
-         return (if length s < 2
-                 then Nothing
-                 else Just (s !! 0 +  s !! 1))
 
 sbExp :: String -> Q Exp
 sbExp s = return
@@ -29,6 +26,13 @@ pushAdd =  QuasiQuoter {quoteExp  = sbExp,
                         quotePat  = undefined,
                         quoteType = undefined,
                         quoteDec  = undefined}
+
+instance OpLike (State [Integer]) where
+  push i = modify (i :)
+  add    = do s <- get
+              return (if length s < 2
+                      then Nothing
+                      else Just (s !! 0 +  s !! 1))
 
 eval :: State [Integer] a -> a
 eval m = evalState m ([] :: [Integer])

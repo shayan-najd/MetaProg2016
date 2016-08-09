@@ -1,8 +1,9 @@
 {-# LANGUAGE TemplateHaskell,QuasiQuotes #-}
-import PushAdd
+import PushAddTagless
 import Control.Monad.State
 
-test = evalState [sb| PUSH 1
+test :: Maybe Integer
+test = eval [pushAdd| PUSH 1
                       PUSH 2
                       PUSH 0
-                      ADD    |] []
+                      ADD    |]
